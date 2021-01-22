@@ -1,0 +1,61 @@
+name:                AtGorilla
+version:             0.0.1.0
+github:              "kuo3/AtGorilla"
+license:             "MIT"
+author:              "kuo3"
+maintainer:          "kuo3.git@gmail.com"
+copyright:           "2021 kuo3"
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on GitHub at <https://github.com/kuo3/AtGorilla#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+- utf8-string
+- directory
+- http-conduit
+- bytestring
+- parsec
+- time
+- safe-exceptions
+- vector
+- process
+- hinotify
+- extra
+library:
+  source-dirs: src
+
+executables:
+  atg:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - AtGorilla
+
+tests:
+  atg-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - AtGorilla
+    - tasty
+    - tasty-hunit
+    - tasty-discover
