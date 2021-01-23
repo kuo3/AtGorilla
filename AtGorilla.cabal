@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: e049029a3f614b5e367be3c61a0f1bd271540266ae8091086c6c2f3888d1173d
+-- hash: 289f560c6c191e051af8858d0dab3181e02a8f2cbcee95653a15252a0c2dcfee
 
 name:           AtGorilla
-version:        0.0.1.0
+version:        0.0.2.0
 description:    Please see the README on GitHub at <https://github.com/kuo3/AtGorilla#readme>
 homepage:       https://github.com/kuo3/AtGorilla#readme
 bug-reports:    https://github.com/kuo3/AtGorilla/issues
