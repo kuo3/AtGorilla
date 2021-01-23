@@ -45,6 +45,16 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - AtGorilla
+    
+  atgs:
+    main:                Main.hs
+    source-dirs:         appstack
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - AtGorilla
 
 tests:
   atg-test:

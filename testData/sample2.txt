@@ -1,0 +1,47 @@
+
+<div>
+<h3>入力例 1</h3>
+<pre>
+1 2
+</pre>
+</div>
+
+<div>
+<h3>出力例 1</h3>
+<pre>
+3
+</pre>
+</div>
+
+<div>
+<h3>入力例 2</h3>
+<pre>
+aiueokakikukeko
+</pre>
+</div>
+
+<div>
+<h3>出力例 2</h3>
+<pre>
+True
+</pre>
+</div>
+
+<div>
+<h3>入力例 3</h3>
+<pre>
+あいうえおかきくけこ
+</pre>
+</div>
+
+<div>
+<h3>出力例 3</h3>
+<pre>
+False
+</pre>
+</div>
+
+<h3>aaa</h3>
+
+
+

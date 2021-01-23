@@ -3,11 +3,11 @@ cradle:
     - path: "./src"
       component: "AtGorilla:lib"
 
-    - path: "./app/Main.hs"
-      component: "AtGorilla:exe:atg"
+    - path: "./appstack/Main.hs"
+      component: "AtGorilla:exe:atgs"
 
-    - path: "./app/Paths_AtGorilla.hs"
-      component: "AtGorilla:exe:atg"
+    - path: "./appstack/Paths_AtGorilla.hs"
+      component: "AtGorilla:exe:atgs"
 
     - path: "./test"
       component: "AtGorilla:test:atg-test"

@@ -15,6 +15,8 @@ import Text.Parsec.Char
 
 type Parser = Parsec UTF8ByteString ()
 
+--type Parser = Parsec String ()
+
 searchTokenParser :: Parser String
 searchTokenParser = try csrfTokenParser <|> (anyChar >> searchTokenParser)
  where
@@ -24,6 +26,7 @@ searchTokenParser = try csrfTokenParser <|> (anyChar >> searchTokenParser)
     string "\""
     return t
 
+{-
 searchSampleParser :: Parser [String]
 searchSampleParser = do
   manyTill anyChar (try $ string "<h3>Sample ")
@@ -37,6 +40,22 @@ searchSampleParser = do
     string "</h3><pre>"
     t <- many $ noneOf "<"
     manyTill anyChar (try $ string "<h3>Sample " <|> (eof >> return ""))
+    return t
+-}
+searchSampleParser :: Parser [String]
+searchSampleParser = do
+  manyTill anyChar (try $ string "<h3>入力例 " >> many1 digit)
+  many sampleParser
+ where
+  sampleParser :: Parser String
+  sampleParser = do
+    skipMany $ space <|> newline
+    string "</h3>"
+    skipMany $ space <|> newline
+    string "<pre>"
+    skipMany $ space <|> newline
+    t <- many $ noneOf "<"
+    manyTill anyChar ((try (string "<h3>入力例 ") >> many1 digit) <|> (try (string "<h3>出力例 ") >> many1 digit) <|> try (eof >> return ""))
     return t
 
 data SubmissionsMe = SubmissionsMe

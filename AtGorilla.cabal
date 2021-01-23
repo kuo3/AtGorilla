@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 226310b554191ea758a78f9c168edc8c51028a462ddbf87904aa507f86bb1324
+-- hash: e049029a3f614b5e367be3c61a0f1bd271540266ae8091086c6c2f3888d1173d
 
 name:           AtGorilla
 version:        0.0.1.0
@@ -56,6 +56,29 @@ executable atg
       Paths_AtGorilla
   hs-source-dirs:
       app
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      AtGorilla
+    , base >=4.7 && <5
+    , bytestring
+    , directory
+    , extra
+    , hinotify
+    , http-conduit
+    , parsec
+    , process
+    , safe-exceptions
+    , time
+    , utf8-string
+    , vector
+  default-language: Haskell2010
+
+executable atgs
+  main-is: Main.hs
+  other-modules:
+      Paths_AtGorilla
+  hs-source-dirs:
+      appstack
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       AtGorilla

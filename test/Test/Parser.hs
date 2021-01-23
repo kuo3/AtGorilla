@@ -1,5 +1,6 @@
 module Test.Parser where
 
+import Codec.Binary.UTF8.String
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BSL
 import Parser
@@ -16,7 +17,21 @@ unit_loginParser1 = do
 
 unit_searchSampleParser1 :: IO ()
 unit_searchSampleParser1 = do
-  sampledata <- BSL.readFile "./testData/sample.txt"
+  sampledata <- BSL.readFile "./testData/sample1.txt"
+  case parse searchSampleParser "error" (UTF8ByteString sampledata) of
+    Left err -> assertFailure $ "パースエラー:" ++ show err
+    Right success ->
+      success
+        @?= [ "1 2\n"
+            , "3\n"
+            , "aiueokakikukeko\n"
+            , "True\n"
+            , "あいうえおかきくけこ\n"
+            , "False\n"
+            ]
+unit_searchSampleParser2 :: IO ()
+unit_searchSampleParser2 = do
+  sampledata <- BSL.readFile "./testData/sample2.txt"
   case parse searchSampleParser "error" (UTF8ByteString sampledata) of
     Left err -> assertFailure $ "パースエラー:" ++ show err
     Right success ->
