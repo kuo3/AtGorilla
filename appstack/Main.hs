@@ -13,6 +13,7 @@ main =
     args <- getArgs
     if
         | length args == 2 && head args == "cc" -> cc StackMode $ args !! 1
+        | length args == 1 && head args == "pwc" -> pwc
         | length args == 1 && head args == "login" -> login
         | length args == 1 && head args == "logout" -> logout
         | length args == 2 && head args == "test" -> test $ args !! 1

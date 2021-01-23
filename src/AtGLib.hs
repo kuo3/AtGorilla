@@ -4,6 +4,7 @@
 module AtGLib (
   Mode (..),
   cc,
+  pwc,
   login,
   logout,
   test,
@@ -73,6 +74,17 @@ cc mode arg = do
         else E.throw $ newApplicationException "INFO-cc-1" "currentパスにリンク以外のファイルがあります。currentリンクは作成しません。"
     else createFileLink (archiveFolder ++ "/" ++ arg) currentLink
   return ()
+
+pwc :: IO ()
+pwc =
+  do
+    eContestName <- E.try getContestName
+    case eContestName of
+      Left exception@(ApplicationException code msg stack) ->
+        E.throw $ newApplicationExceptionStack "INFO-pc-1" "コンテスト情報を取得できなかったため、実行できません。ccオプションを実行してください。" exception
+      Right contestName -> do
+        putStrLn $ "現在作業中のコンテストは " ++ contestName ++ " です。"
+    return ()
 
 login :: IO ()
 login = do
@@ -426,40 +438,48 @@ testP arg mode contestName = do
                   "buildに失敗しました。修正してください。"
             ExitSuccess -> do
               putStrLn $ "running " ++ show tests ++ " tests"
-              forM_ [0 .. length samples - 1] $ \i -> do
-                let no = show $ div i 2 + 1
-                    c = if even i then "i" else "o"
-                    name = atgFolder ++ "/" ++ arg ++ "_" ++ no ++ "_" ++ c
-                    outFileName = atgFolder ++ "/out.txt"
-                writeFile name $ samples !! i
-                let runCommandStr =
-                      if mode == GhcMode
-                        then
-                          "./" ++ archiveFolder ++ "/" ++ contestName ++ "/" ++ arg ++ ".out >"
-                            ++ outFileName
-                            ++ " < "
-                            ++ name
-                        else
-                          "stack run > "
-                            ++ outFileName
-                            ++ " < "
-                            ++ name
-                if c == "i"
-                  then do
-                    processHandle <-
-                      runCommand
-                        runCommandStr
-                    exitCode <- waitForProcess processHandle
-                    case exitCode of
-                      ExitSuccess -> return ()
-                      ExitFailure exitCode ->
-                        putStrLn $ "ExitFailure :ExitCode = " ++ show exitCode
-                  else do
-                    act <- readFile outFileName
-                    exp <- readFile name
-                    if exCR act == exCR exp
-                      then putStrLn $ "入力例" ++ no ++ "---------> OK"
-                      else putStrLn $ "入力例" ++ no ++ "---------> NG"
+              forM_ [0 .. length samples - 1] $ \i ->
+                do
+                  let (inData, outData) = samples !! i
+                  let iname = atgFolder ++ "/" ++ arg ++ "_" ++ show i ++ "_" ++ "i"
+                  let oname = atgFolder ++ "/" ++ arg ++ "_" ++ show i ++ "_" ++ "o"
+                  let outFileName = atgFolder ++ "/out.txt"
+                  writeFile iname inData
+                  writeFile oname outData
+                  let runCommandStr =
+                        if mode == GhcMode
+                          then
+                            "./" ++ archiveFolder ++ "/" ++ contestName ++ "/" ++ arg ++ ".out >"
+                              ++ outFileName
+                              ++ " < "
+                              ++ iname
+                          else
+                            "stack run > "
+                              ++ outFileName
+                              ++ " < "
+                              ++ iname
+
+                  processHandle <-
+                    runCommand
+                      runCommandStr
+                  exitCode <- waitForProcess processHandle
+                  case exitCode of
+                    ExitSuccess -> return ()
+                    ExitFailure exitCode ->
+                      putStrLn $ "ExitFailure :ExitCode = " ++ show exitCode
+
+                  act <- readFile outFileName
+                  if exCR act == exCR outData
+                    then putStrLn $ "入力例" ++ show i ++ "---------> OK"
+                    else do
+                      putStrLn $ "入力例" ++ show i ++ "---------> NG"
+                      putStrLn "入力:"
+                      putStr inData
+                      putStrLn "期待値:"
+                      putStr $exCR outData
+                      putStrLn "出力:"
+                      putStr $exCR act
+
   return ()
  where
   exCR str = foldr (\x acc -> if x == '\r' then acc else x : acc) [] str

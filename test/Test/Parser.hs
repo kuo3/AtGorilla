@@ -22,12 +22,18 @@ unit_searchSampleParser1 = do
     Left err -> assertFailure $ "パースエラー:" ++ show err
     Right success ->
       success
-        @?= [ "1 2\n"
-            , "3\n"
-            , "aiueokakikukeko\n"
-            , "True\n"
-            , "あいうえおかきくけこ\n"
-            , "False\n"
+        @?= [
+              ( "1 2\n"
+              , "3\n"
+              )
+            ,
+              ( "aiueokakikukeko\n"
+              , "True\n"
+              )
+            ,
+              ( "あいうえおかきくけこ\n"
+              , "False\n"
+              )
             ]
 unit_searchSampleParser2 :: IO ()
 unit_searchSampleParser2 = do
@@ -36,10 +42,16 @@ unit_searchSampleParser2 = do
     Left err -> assertFailure $ "パースエラー:" ++ show err
     Right success ->
       success
-        @?= [ "1 2\n"
-            , "3\n"
-            , "aiueokakikukeko\n"
-            , "True\n"
-            , "あいうえおかきくけこ\n"
-            , "False\n"
+        @?= [
+              ( "1 2\n"
+              , "3\n"
+              )
+            ,
+              ( "aiueokakikukeko\n"
+              , "True\n"
+              )
+            ,
+              ( "あいうえおかきくけこ\n"
+              , "False\n"
+              )
             ]
