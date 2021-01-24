@@ -1,0 +1,43 @@
+<div>
+<h3>入力例 1</h3>
+<pre>
+2
+AND
+OR
+
+</pre>
+</div>
+
+<div>
+<h3>出力例 1</h3>
+<pre>
+5
+
+</pre>
+</div>
+
+<div>
+<h3>入力例 2</h3>
+<pre>
+5
+OR
+OR
+OR
+OR
+OR
+
+</pre>
+</div>
+
+<div>
+<h3>出力例 2</h3>
+<pre>
+63
+
+</pre>
+</div>
+
+
+
+
+

@@ -42,21 +42,28 @@ searchSampleParser = do
     manyTill anyChar (try $ string "<h3>Sample " <|> (eof >> return ""))
     return t
 -}
-searchSampleParser :: Parser [String]
+searchSampleParser :: Parser [(String, String)]
 searchSampleParser = do
   manyTill anyChar (try $ string "<h3>入力例 " >> many1 digit)
   many sampleParser
  where
-  sampleParser :: Parser String
+  sampleParser :: Parser (String, String)
   sampleParser = do
     skipMany $ space <|> newline
     string "</h3>"
     skipMany $ space <|> newline
     string "<pre>"
     skipMany $ space <|> newline
-    t <- many $ noneOf "<"
-    manyTill anyChar ((try (string "<h3>入力例 ") >> many1 digit) <|> (try (string "<h3>出力例 ") >> many1 digit) <|> try (eof >> return ""))
-    return t
+    i <- many $ noneOf "<"
+    manyTill anyChar (try (string "<h3>出力例 ") >> many1 digit)
+    skipMany $ space <|> newline
+    string "</h3>"
+    skipMany $ space <|> newline
+    string "<pre>"
+    skipMany $ space <|> newline
+    o <- many $ noneOf "<"
+    manyTill anyChar ((try (string "<h3>入力例 ") >> many1 digit) <|> try (eof >> return ""))
+    return (i, o)
 
 data SubmissionsMe = SubmissionsMe
   { submitTime :: String

@@ -4,6 +4,7 @@
 module AtGLib (
   Mode (..),
   cc,
+  pwc,
   login,
   logout,
   test,
@@ -41,17 +42,22 @@ import Text.Parsec.Char
 atgFolder = "./.atg"
 
 archiveFolder = "./archive"
+
 currentLink = "./current"
+
 contestFile = atgFolder ++ "/contest.txt"
 
 modeFile = atgFolder ++ "/mode.txt"
+
 loginInfoFile = atgFolder ++ "/login.txt"
 
 mainhsFile = "./app/Main.hs"
 
 mainbkhsFile = "./.atg/Main.bk.hs"
 
-data Mode = GhcMode | StackMode
+data Mode
+  = GhcMode
+  | StackMode
   deriving (Show, Read, Eq)
 
 cc :: Mode -> String -> IO ()
@@ -60,8 +66,7 @@ cc mode arg = do
   createDirectoryIfMissing True archiveFolder
   createDirectoryIfMissing True $ archiveFolder ++ "/" ++ arg
   writeFile contestFile arg
-  writeFile modeFile $show mode
-
+  writeFile modeFile $ show mode
   pe <- doesPathExist currentLink
   if pe
     then do
@@ -70,8 +75,29 @@ cc mode arg = do
         then do
           removeDirectoryLink currentLink
           createFileLink (archiveFolder ++ "/" ++ arg) currentLink
-        else E.throw $ newApplicationException "INFO-cc-1" "currentパスにリンク以外のファイルがあります。currentリンクは作成しません。"
+        else
+          E.throw $
+            newApplicationException
+              "INFO-cc-1"
+              "currentパスにリンク以外のファイルがあります。currentリンクは作成しません。"
     else createFileLink (archiveFolder ++ "/" ++ arg) currentLink
+  return ()
+
+pwc :: IO ()
+pwc = do
+  eContestName <- E.try getContestName
+  case eContestName of
+    Left exception@(ApplicationException code msg stack) ->
+      E.throw $
+        newApplicationExceptionStack
+          "INFO-pc-1"
+          "コンテスト情報を取得できなかったため、実行できません。ccオプションを実行してください。"
+          exception
+    Right contestName -> do
+      putStrLn $
+        "現在作業中のコンテストは "
+          ++ contestName
+          ++ " です。"
   return ()
 
 login :: IO ()
@@ -92,14 +118,15 @@ logout = do
   (contest, csrfToken, cookieJar) <- preLoginWithCookie manager
   let stringUrl = "https://atcoder.jp/logout?lang=ja"
   let fUrlEncodedBody = urlEncodedBody [("csrf_token", fromString csrfToken)]
-  (response, cookieJar) <-
-    postAccess
-      stringUrl
-      fUrlEncodedBody
-      cookieJar
-      manager
+  ( response
+    , cookieJar
+    ) <-
+    postAccess stringUrl fUrlEncodedBody cookieJar manager
   let body = responseBody response
-  case parse logoutParser "レスポンスボディのパースに失敗しました。" (UTF8ByteString body) of
+  case parse
+    logoutParser
+    "レスポンスボディのパースに失敗しました。"
+    (UTF8ByteString body) of
     Left msg -> E.throw $ newSystemException "ERROR-logout-1" $ show msg
     Right success ->
       if success
@@ -119,12 +146,20 @@ test arg = do
   eMode <- E.try getMode
   case eMode of
     Left exception@(ApplicationException code msg stack) ->
-      E.throw $ newApplicationExceptionStack "INFO-test-1" "モード情報を取得できなかったため、実行できません。ccオプションを実行してください。" exception
+      E.throw $
+        newApplicationExceptionStack
+          "INFO-test-1"
+          "モード情報を取得できなかったため、実行できません。ccオプションを実行してください。"
+          exception
     Right mode -> do
       eContestName <- E.try getContestName
       case eContestName of
         Left exception@(ApplicationException code msg stack) ->
-          E.throw $ newApplicationExceptionStack "INFO-test-2" "コンテスト情報を取得できなかったため、実行できません。ccオプションを実行してください。" exception
+          E.throw $
+            newApplicationExceptionStack
+              "INFO-test-2"
+              "コンテスト情報を取得できなかったため、実行できません。ccオプションを実行してください。"
+              exception
         Right contestName -> do
           let watchTarget =
                 if mode == GhcMode
@@ -137,12 +172,20 @@ testw arg = do
   eMode <- E.try getMode
   case eMode of
     Left exception@(ApplicationException code msg stack) ->
-      E.throw $ newApplicationExceptionStack "INFO-testw-1" "モード情報を取得できなかったため、実行できません。ccオプションを実行してください。" exception
+      E.throw $
+        newApplicationExceptionStack
+          "INFO-testw-1"
+          "モード情報を取得できなかったため、実行できません。ccオプションを実行してください。"
+          exception
     Right mode -> do
       eContestName <- E.try getContestName
       case eContestName of
         Left exception@(ApplicationException code msg stack) ->
-          E.throw $ newApplicationExceptionStack "INFO-testw-2" "コンテスト情報を取得できなかったため、実行できません。ccオプションを実行してください。" exception
+          E.throw $
+            newApplicationExceptionStack
+              "INFO-testw-2"
+              "コンテスト情報を取得できなかったため、実行できません。ccオプションを実行してください。"
+              exception
         Right contestName -> do
           let watchTarget =
                 if mode == GhcMode
@@ -154,9 +197,7 @@ testw arg = do
             SI.addWatch
               inotify
               [SI.CloseWrite]
-              ( fromString
-                  watchTarget
-              )
+              (fromString watchTarget)
               ( \e -> do
                   threadDelay (5 * 100 * 1000)
                   result <- E.try $ testP arg mode contestName
@@ -170,54 +211,54 @@ testw arg = do
   testwp :: String -> SI.WatchDescriptor -> SI.INotify -> String -> IO ()
   testwp arg wd inotify watchTarget = do
     putStrLn $
-      watchTarget ++ "ファイルの変更確認中。変更確認されれば"
+      watchTarget
+        ++ "ファイルの変更確認中。変更確認されれば"
         ++ arg
         ++ "問題サンプルのテストを行います。\n"
         ++ "[a-z|1-9]エンターキーを押すと問題が切り替わります。\n"
         ++ "エンターキーのみを押すと終了します。"
     input <- getLine
     if
-        | input == "" ->
-          do
-            SI.removeWatch wd
-            SI.killINotify inotify
-            return ()
-        | length input
-            == 1
-            && ( ( ord (head input)
-                    >= ord 'a'
-                    && ord (head input)
-                    <= ord 'z'
-                 )
-                  || ( ord (head input)
-                        >= ord '1'
-                        && ord (head input)
-                        <= ord '9'
-                     )
+        | input == "" -> do
+          SI.removeWatch wd
+          SI.killINotify inotify
+          return ()
+        | length input == 1
+            && ( (ord (head input) >= ord 'a' && ord (head input) <= ord 'z')
+                  || (ord (head input) >= ord '1' && ord (head input) <= ord '9')
                ) ->
           do
             SI.removeWatch wd
             SI.killINotify inotify
             testw input
-        | otherwise ->
-          do
-            testwp arg wd inotify watchTarget
+        | otherwise -> do
+          testwp arg wd inotify watchTarget
 
 submit :: String -> IO ()
 submit arg = do
   eMode <- E.try getMode
   case eMode of
     Left exception@(ApplicationException code msg stack) ->
-      E.throw $ newApplicationExceptionStack "INFO-testw-1" "モード情報を取得できなかったため、実行できません。ccオプションを実行してください。" exception
+      E.throw $
+        newApplicationExceptionStack
+          "INFO-testw-1"
+          "モード情報を取得できなかったため、実行できません。ccオプションを実行してください。"
+          exception
     Right mode -> do
       eContestName <- E.try getContestName
       case eContestName of
         Left exception@(ApplicationException code msg stack) ->
-          E.throw $ newApplicationExceptionStack "INFO-testw-2" "コンテスト情報を取得できなかったため、実行できません。ccオプションを実行してください。" exception
+          E.throw $
+            newApplicationExceptionStack
+              "INFO-testw-2"
+              "コンテスト情報を取得できなかったため、実行できません。ccオプションを実行してください。"
+              exception
         Right contestName -> do
           submitFile <-
             if mode == GhcMode
-              then BS.readFile $ archiveFolder ++ "/" ++ contestName ++ "/" ++ arg ++ ".hs"
+              then
+                BS.readFile $
+                  archiveFolder ++ "/" ++ contestName ++ "/" ++ arg ++ ".hs"
               else BS.readFile mainhsFile
           manager <- newManager tlsManagerSettings
           (contestName, csrfToken, cookieJar) <- preLoginWithCookie manager
@@ -225,11 +266,17 @@ submit arg = do
           let fUrlEncodedBody =
                 urlEncodedBody
                   [ ("csrf_token", fromString csrfToken)
-                  , ("data.TaskScreenName", fromString $ contestName ++ "_" ++ arg)
+                  ,
+                    ( "data.TaskScreenName"
+                    , fromString $ contestName ++ "_" ++ arg
+                    )
                   , ("data.LanguageId", fromString "4027")
                   , ("sourceCode", submitFile)
                   ]
-          (response, cookieJar) <- postAccess url fUrlEncodedBody cookieJar manager
+          ( response
+            , cookieJar
+            ) <-
+            postAccess url fUrlEncodedBody cookieJar manager
           putStrLn "提出しました。"
           return ()
 
@@ -242,7 +289,10 @@ status = do
         setQueryString [("csrf_token", Just $ fromString csrfToken)]
   (response, cookieJar) <- getAccess url fSetQueryString cookieJar manager
   let body = responseBody response
-  case parse submissionsMeParser "レスポンスボディのパースに失敗しました。" (UTF8ByteString body) of
+  case parse
+    submissionsMeParser
+    "レスポンスボディのパースに失敗しました。"
+    (UTF8ByteString body) of
     Left errmsg ->
       E.throw $ newApplicationException "ERR-status-1" $ show errmsg
     Right submissionsMe -> do
@@ -286,7 +336,8 @@ archive arg = do
   tGetContestName <- E.try getContestName
   case tGetContestName of
     Left exception@(ApplicationException code msg stack) ->
-      putStrLn "コンテスト名の取得に失敗しました。ccオプションを実行してください。"
+      putStrLn
+        "コンテスト名の取得に失敗しました。ccオプションを実行してください。"
     Right contestName -> do
       let fromFile = mainhsFile
       let toFile = archiveFolder ++ "/" ++ contestName ++ "/" ++ arg ++ ".hs"
@@ -328,8 +379,12 @@ newLogin = do
   response1 <- httpLbs request1 manager
   let cookieJar1 = responseCookieJar response1
   let body1 = responseBody response1
-  case parse searchTokenParser "レスポンスボディのパースに失敗しました。" (UTF8ByteString body1) of
-    Left errmsg -> E.throw $ newSystemException "ERR-newlogin-1" $ show errmsg
+  case parse
+    searchTokenParser
+    "レスポンスボディのパースに失敗しました。"
+    (UTF8ByteString body1) of
+    Left errmsg ->
+      E.throw $ newSystemException "ERR-newlogin-1" $ show errmsg
     Right csrfToken -> do
       let stringUrl = "https://atcoder.jp/login?lang=ja"
       let fUrlEncodedBody =
@@ -338,12 +393,10 @@ newLogin = do
               , ("username", username)
               , ("password", password)
               ]
-      (response, cookieJar) <-
-        postAccess
-          stringUrl
-          fUrlEncodedBody
-          cookieJar1
-          manager
+      ( response
+        , cookieJar
+        ) <-
+        postAccess stringUrl fUrlEncodedBody cookieJar1 manager
       let body2 = responseBody response
       let cookieJar2 = responseCookieJar response
       case parse
@@ -383,9 +436,21 @@ testP :: String -> Mode -> String -> IO ()
 testP arg mode contestName = do
   let buildCommandStr =
         if mode == GhcMode
-          then "ghc -o " ++ archiveFolder ++ "/" ++ contestName ++ "/" ++ arg ++ ".out -O0 " ++ archiveFolder ++ "/" ++ contestName ++ "/" ++ arg ++ ".hs"
+          then
+            "ghc -o "
+              ++ archiveFolder
+              ++ "/"
+              ++ contestName
+              ++ "/"
+              ++ arg
+              ++ ".out -O0 "
+              ++ archiveFolder
+              ++ "/"
+              ++ contestName
+              ++ "/"
+              ++ arg
+              ++ ".hs"
           else "stack build --fast"
-
   processHandle <- runCommand buildCommandStr
   manager <- newManager tlsManagerSettings
   resultPreLogin <- E.try $ preLoginWithCookie manager
@@ -410,7 +475,9 @@ testP arg mode contestName = do
       let body = responseBody response
       case parse
         searchSampleParser
-        ("ERR-testP-1:レスポンスボディのパースに失敗しました。" :: String)
+        ( "ERR-testP-1:レスポンスボディのパースに失敗しました。" ::
+            String
+        )
         (UTF8ByteString body) of
         Left errmsg ->
           --E.throw $ newSystemException "ERR-testP-1" $ show errmsg
@@ -426,43 +493,59 @@ testP arg mode contestName = do
                   "buildに失敗しました。修正してください。"
             ExitSuccess -> do
               putStrLn $ "running " ++ show tests ++ " tests"
-              forM_ [0 .. length samples - 1] $ \i -> do
-                let no = show $ div i 2 + 1
-                    c = if even i then "i" else "o"
-                    name = atgFolder ++ "/" ++ arg ++ "_" ++ no ++ "_" ++ c
-                    outFileName = atgFolder ++ "/out.txt"
-                writeFile name $ samples !! i
-                let runCommandStr =
-                      if mode == GhcMode
-                        then
-                          "./" ++ archiveFolder ++ "/" ++ contestName ++ "/" ++ arg ++ ".out >"
-                            ++ outFileName
-                            ++ " < "
-                            ++ name
-                        else
-                          "stack run > "
-                            ++ outFileName
-                            ++ " < "
-                            ++ name
-                if c == "i"
-                  then do
-                    processHandle <-
-                      runCommand
-                        runCommandStr
-                    exitCode <- waitForProcess processHandle
-                    case exitCode of
-                      ExitSuccess -> return ()
-                      ExitFailure exitCode ->
-                        putStrLn $ "ExitFailure :ExitCode = " ++ show exitCode
-                  else do
-                    act <- readFile outFileName
-                    exp <- readFile name
-                    if exCR act == exCR exp
-                      then putStrLn $ "入力例" ++ no ++ "---------> OK"
-                      else putStrLn $ "入力例" ++ no ++ "---------> NG"
+              forM_ [0 .. length samples - 1] $
+                \i -> do
+                  let no = i + 1
+                  let (inData, outData) = samples !! i
+                  let iname =
+                        atgFolder ++ "/" ++ arg ++ "_" ++ show no ++ "_" ++ "i"
+                  let oname =
+                        atgFolder ++ "/" ++ arg ++ "_" ++ show no ++ "_" ++ "o"
+                  let outFileName = atgFolder ++ "/out.txt"
+                  writeFile iname $ exCR inData
+                  writeFile oname $ exCR outData
+                  let runCommandStr =
+                        if mode == GhcMode
+                          then
+                            "./"
+                              ++ archiveFolder
+                              ++ "/"
+                              ++ contestName
+                              ++ "/"
+                              ++ arg
+                              ++ ".out >"
+                              ++ outFileName
+                              ++ " < "
+                              ++ iname
+                          else "stack run > " ++ outFileName ++ " < " ++ iname
+                  processHandle <- runCommand runCommandStr
+                  exitCode <- waitForProcess processHandle
+                  case exitCode of
+                    ExitSuccess -> return ()
+                    ExitFailure exitCode ->
+                      putStrLn $ "ExitFailure :ExitCode = " ++ show exitCode
+                  act <- readFile outFileName
+                  if exCR act == exCR outData
+                    then putStrLn $ "入力例" ++ show no ++ "---------> OK"
+                    else do
+                      putStrLn $ "入力例" ++ show no ++ "---------> NG"
+                      putStrLn "入力:"
+                      putStr inData
+                      putStrLn "期待値:"
+                      putStr $ exCR outData
+                      putStrLn "出力:"
+                      putStr $ exCR act
   return ()
  where
-  exCR str = foldr (\x acc -> if x == '\r' then acc else x : acc) [] str
+  exCR str =
+    foldr
+      ( \x acc ->
+          if x == '\r'
+            then acc
+            else x : acc
+      )
+      []
+      str
 
 type StringContest = String
 
@@ -494,7 +577,10 @@ preLoginWithCookie manager = do
       response1 <- httpLbs request1 manager
       let cookieJar1 = responseCookieJar response1
       let body1 = responseBody response1
-      case parse searchTokenParser "レスポンスボディのパースに失敗しました。" (UTF8ByteString body1) of
+      case parse
+        searchTokenParser
+        "レスポンスボディのパースに失敗しました。"
+        (UTF8ByteString body1) of
         Left errmsg ->
           E.throw $ newSystemException "ERR-preLogin-1" $ show errmsg
         Right csrfToken -> return (contestName, csrfToken, cookieJar)
@@ -573,7 +659,9 @@ getMainhsBS = do
   if not feMainhs
     then
       E.throw $
-        newApplicationException "INFO-getMainhsBS-1" "app/Main.hsファイルが存在しません。"
+        newApplicationException
+          "INFO-getMainhsBS-1"
+          "app/Main.hsファイルが存在しません。"
     else do
       mainhs <- BS.readFile mainhsFile
       if mainhs == ""
@@ -596,9 +684,10 @@ moveFile fromFile toFile bkFile = do
           "fromファイルが存在しないため、実行できません。プロジェクトの構成を見直してください。"
     else do
       feTo <- doesFileExist toFile
-      when feTo $ do
-        tohs <- BS.readFile toFile
-        BS.writeFile bkFile tohs
+      when feTo $
+        do
+          tohs <- BS.readFile toFile
+          BS.writeFile bkFile tohs
       fromhs <- BS.readFile fromFile
       BS.writeFile toFile fromhs
       return ()
