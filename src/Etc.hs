@@ -1,10 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Etc (getUsername, getPassword, withEcho, imap) where
+module Etc ( getUsername, getPassword, withEcho, imap ) where
 
 import Control.Exception
 import Control.Monad
+
 import qualified Data.ByteString as BS
+
 import System.IO
 
 getUsername :: IO BS.ByteString

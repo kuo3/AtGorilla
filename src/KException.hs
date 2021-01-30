@@ -1,14 +1,10 @@
-module KException (
-  KException (..),
-  SystemException (..),
-  ApplicationException (..),
-  newSystemException,
-  newSystemExceptionStack,
-  newApplicationException,
-  newApplicationExceptionStack,
-) where
+module KException ( KException(..), SystemException(..)
+                  , ApplicationException(..), newSystemException
+                  , newSystemExceptionStack, newApplicationException
+                  , newApplicationExceptionStack ) where
 
 import Control.Exception.Safe
+
 import Etc
 
 class KException e where
@@ -20,24 +16,15 @@ class KException e where
   exceptionName :: e -> String
   code :: e -> String
   msg :: e -> String
-  stack :: e -> [String]
+  stack :: e -> [ String ]
   newKException :: String -> String -> e
   newKExceptionStack :: KException e2 => String -> String -> e2 -> e
-  constructor :: (String -> String -> [String] -> e)
-  stackMsg kException =
-    unlines $
-      imap
-        ( \i x ->
-            let header =
-                  if i == 0
-                    then ""
-                    else replicate (i - 1) ' ' ++ "┗"
-             in header ++ x
-        )
-        $ stack kException
+  constructor :: (String -> String -> [ String ] -> e)
+  stackMsg kException = unlines $ imap
+    (\i x -> let header = if i == 0 then "" else replicate (i - 1) ' ' ++ "┗"
+     in header ++ x) $ stack kException
 
-  writeMsgInLog kException path =
-    appendFile path $ msg kException
+  writeMsgInLog kException path = appendFile path $ msg kException
 
   writeStackMsgInLog kException path = appendFile path $ stackMsg kException
 
@@ -45,13 +32,13 @@ class KException e where
 
   printStackMsg kException = putStrLn $ stackMsg kException
 
-  newKException code msg = constructor code msg [code ++ " : " ++ msg]
+  newKException code msg = constructor code msg [ code ++ " : " ++ msg ]
 
-  newKExceptionStack code msg e =
-    constructor code msg ((code ++ " : " ++ msg) : stack e)
+  newKExceptionStack code msg e = constructor code msg
+    ((code ++ " : " ++ msg) : stack e)
 
-data SystemException = SystemException String String [String]
-  deriving (Eq, Show)
+data SystemException = SystemException String String [ String ]
+  deriving ( Eq, Show )
 
 instance KException SystemException where
   exceptionName exception = "SystemException"
@@ -66,8 +53,8 @@ instance KException SystemException where
 
 instance Exception SystemException
 
-data ApplicationException = ApplicationException String String [String]
-  deriving (Eq, Show)
+data ApplicationException = ApplicationException String String [ String ]
+  deriving ( Eq, Show )
 
 instance KException ApplicationException where
   exceptionName exception = "ApplicationException"
@@ -86,18 +73,18 @@ type CodeString = String
 
 type MsgString = String
 
-type StackString = [String]
+type StackString = [ String ]
 
 newSystemException :: CodeString -> MsgString -> SystemException
 newSystemException = newKException
 
-newSystemExceptionStack ::
-  KException e => CodeString -> MsgString -> e -> SystemException
+newSystemExceptionStack
+  :: KException e => CodeString -> MsgString -> e -> SystemException
 newSystemExceptionStack = newKExceptionStack
 
 newApplicationException :: CodeString -> MsgString -> ApplicationException
 newApplicationException = newKException
 
-newApplicationExceptionStack ::
-  KException e => CodeString -> MsgString -> e -> ApplicationException
+newApplicationExceptionStack
+  :: KException e => CodeString -> MsgString -> e -> ApplicationException
 newApplicationExceptionStack = newKExceptionStack

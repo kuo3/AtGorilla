@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 289f560c6c191e051af8858d0dab3181e02a8f2cbcee95653a15252a0c2dcfee
+-- hash: 3b8039257c6c361ba85aa1487d7e4517daeaa352cf13ba4f04bff3ec44632872
 
 name:           AtGorilla
 version:        0.0.2.0
@@ -31,6 +31,7 @@ library
       Etc
       KException
       Parser
+      Path
   other-modules:
       Paths_AtGorilla
   hs-source-dirs:
